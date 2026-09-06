@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="AK 시리즈 3D 뷰어", layout="wide")
 
-# 다크모드 강제 적용 CSS
+# 다크모드 적용 CSS
 st.markdown(
     """
     <style>
@@ -19,7 +19,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 세션 상태 관리
 if "page" not in st.session_state:
     st.session_state.page = "main"
 
@@ -28,13 +27,12 @@ def change_page(page_name):
     st.session_state.page = page_name
 
 
-# 로컬 .glb 파일을 Base64 데이터 문자열로 변환하는 함수
 def get_model_src(file_path_or_url):
     if os.path.exists(file_path_or_url):
         with open(file_path_or_url, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
         return f"data:model/gltf-binary;base64,{encoded}"
-    return file_path_or_url  # 파일이 없으면 URL 그대로 사용
+    return file_path_or_url
 
 
 # ==========================================
@@ -49,15 +47,14 @@ if st.session_state.page == "main":
         args=("info",),
     )
 
-    # 1) 로컬 파일(예: "ak47.glb")이 있으면 해당 파일을 읽고, 없으면 동작이 보장된 샘플 URL 사용
+    # 로컬 ak47.glb 파일이 없을 경우 실제 AK-47 3D 모델 URL을 자동으로 로드
     local_glb_path = "ak47.glb"
-    fallback_url = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"
+    ak_online_url = "https://raw.githubusercontent.com/yomotsu/camera-controls/main/examples/resources/models/ak47.glb"
 
     model_src = get_model_src(
-        local_glb_path if os.path.exists(local_glb_path) else fallback_url
+        local_glb_path if os.path.exists(local_glb_path) else ak_online_url
     )
 
-    # HTML 컴포넌트 구동 코드
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -86,7 +83,7 @@ if st.session_state.page == "main":
     <body>
         <model-viewer 
             src="{model_src}" 
-            alt="AK 3D Model" 
+            alt="AK-47 3D Model" 
             auto-rotate 
             camera-controls 
             shadow-intensity="1">
@@ -109,7 +106,7 @@ elif st.session_state.page == "info":
     st.button("⬅ 3D 뷰어로 돌아가기", on_click=change_page, args=("main",))
 
     st.markdown("---")
-    st.subheader("🛠️ 제조사 및 기원")
+    st.subheader("제조사 및 기원")
     st.write("""
     * **제조사:** 칼라시니코프 콘체른 (Kalashnikov Concern, 구 이젭스크 기계공장)
     * **설계자:** 미하일 칼라시니코프 (Mikhail Kalashnikov)
