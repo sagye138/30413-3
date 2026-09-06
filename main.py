@@ -1,4 +1,5 @@
 import base64
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -13,7 +14,6 @@ st.markdown(
             background-color: #2b2b2b; color: #ffffff; border: 1px solid #4a4a4a;
         }
         div.stButton > button:hover { background-color: #3b3b3b; border: 1px solid #ffffff; }
-        .st-emotion-cache-1wivap2 { color: #e0e0e0; } /* 업로더 텍스트 색상 */
     </style>
 """,
     unsafe_allow_html=True,
@@ -24,6 +24,17 @@ if "page" not in st.session_state:
 
 def change_page(page_name):
     st.session_state.page = page_name
+
+# 파이썬이 직접 3D 모델을 다운로드 (캐싱을 적용해 매번 새로고침되는 현상 방지)
+@st.cache_data
+def fetch_3d_model(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        encoded = base64.b64encode(response.content).decode("utf-8")
+        return f"data:model/gltf-binary;base64,{encoded}"
+    except Exception as e:
+        return None
 
 # ==========================================
 # 1. 메인 화면 (3D 모델 뷰어)
@@ -39,14 +50,11 @@ if st.session_state.page == "main":
 
     st.markdown("---")
     
-    # 로컬 파일 업로더 생성 (외부 링크 차단 문제 원천 해결)
-    uploaded_file = st.file_uploader("📥 다운로드 받은 AK 소총 3D 모델(.glb) 파일을 여기에 드래그 앤 드롭하세요", type=['glb'])
+    with st.spinner("웹에서 AK-47 3D 모델을 가져오는 중입니다... (최초 1회만 소요)"):
+        ak_online_url = "https://raw.githubusercontent.com/yomotsu/camera-controls/main/examples/resources/models/ak47.glb"
+        model_src = fetch_3d_model(ak_online_url)
 
-    if uploaded_file is not None:
-        # 업로드된 파일을 Base64로 인코딩하여 HTML에 직접 주입
-        encoded = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-        model_src = f"data:model/gltf-binary;base64,{encoded}"
-
+    if model_src:
         html_code = f"""
         <!DOCTYPE html>
         <html>
@@ -91,7 +99,7 @@ if st.session_state.page == "main":
         """
         components.html(html_code, height=620)
     else:
-        st.info("💡 외부 링크는 브라우저 보안에 의해 자주 차단됩니다. 3D 모델 뷰어를 보려면 위 공간에 .glb 파일을 업로드해 주세요.")
+        st.error("3D 모델 다운로드에 실패했습니다. 해당 URL이 만료되었거나 네트워크 문제가 있습니다.")
 
 # ==========================================
 # 2. 상세 설명 화면
