@@ -1,11 +1,9 @@
-import base64
-import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="AK 시리즈 3D 뷰어", layout="wide")
+st.set_page_config(page_title="AK 시리즈 2.5D 뷰어", layout="wide")
 
-# 다크모드 적용 CSS
+# 다크모드 강제 적용 CSS
 st.markdown(
     """
     <style>
@@ -25,22 +23,11 @@ if "page" not in st.session_state:
 def change_page(page_name):
     st.session_state.page = page_name
 
-# 파이썬이 직접 3D 모델을 다운로드 (캐싱을 적용해 매번 새로고침되는 현상 방지)
-@st.cache_data
-def fetch_3d_model(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        encoded = base64.b64encode(response.content).decode("utf-8")
-        return f"data:model/gltf-binary;base64,{encoded}"
-    except Exception as e:
-        return None
-
 # ==========================================
-# 1. 메인 화면 (3D 모델 뷰어)
+# 1. 메인 화면 (2D 인터랙티브 뷰어)
 # ==========================================
 if st.session_state.page == "main":
-    st.title("AK 소총 3D 모델 뷰어")
+    st.title("AK 소총 부품 인터랙티브 뷰어")
 
     st.button(
         "AK 시리즈 상세 설명 및 차이점 보기 ➔",
@@ -49,71 +36,141 @@ if st.session_state.page == "main":
     )
 
     st.markdown("---")
-    
-    with st.spinner("웹에서 AK-47 3D 모델을 가져오는 중입니다... (최초 1회만 소요)"):
-        ak_online_url = "https://raw.githubusercontent.com/yomotsu/camera-controls/main/examples/resources/models/ak47.glb"
-        model_src = fetch_3d_model(ak_online_url)
 
-    if model_src:
-        html_code = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
-            <style>
-                body {{ margin: 0; background-color: #121212; }}
-                model-viewer {{
-                    width: 100vw;
-                    height: 600px;
-                    background-color: #1a1a1a;
-                    border-radius: 8px;
-                    border: 1px solid #333;
-                }}
-                .Hotspot {{
-                    background: rgba(30, 30, 30, 0.85);
-                    border-radius: 4px;
-                    padding: 6px;
-                    border: 1px solid #666;
-                    color: #eee;
-                    font-family: sans-serif;
-                    font-size: 13px;
-                    font-weight: bold;
-                    cursor: pointer;
-                }}
-            </style>
-        </head>
-        <body>
-            <model-viewer 
-                src="{model_src}" 
-                alt="AK 3D Model" 
-                auto-rotate 
-                camera-controls 
-                shadow-intensity="1">
-                
-                <button class="Hotspot" slot="hotspot-1" data-position="0 0.05 0.15" data-normal="0 0 1">
-                    노리쇠 뭉치
-                </button>
-            </model-viewer>
-        </body>
-        </html>
-        """
-        components.html(html_code, height=620)
-    else:
-        st.error("3D 모델 다운로드에 실패했습니다. 해당 URL이 만료되었거나 네트워크 문제가 있습니다.")
+    # 2D 이미지 위에 마커를 띄우는 HTML/CSS
+    html_code = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { margin: 0; background-color: #121212; display: flex; justify-content: center; }
+            .image-container {
+                position: relative;
+                width: 100%;
+                max-width: 900px; /* 이미지 최대 크기 */
+                background-color: #1a1a1a;
+                border-radius: 8px;
+                border: 1px solid #333;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .image-container img {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            /* 마커 (맥박 뛰는 효과) */
+            .hotspot {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background-color: rgba(255, 50, 50, 0.8);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                cursor: pointer;
+                box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.7);
+                animation: pulse 1.5s infinite;
+            }
+            @keyframes pulse {
+                0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.7); }
+                70% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 10px rgba(255, 50, 50, 0); }
+                100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
+            }
+            /* 마우스를 올렸을 때 나타나는 툴팁 */
+            .tooltip {
+                visibility: hidden;
+                width: 200px;
+                background-color: rgba(30, 30, 30, 0.95);
+                color: #fff;
+                text-align: left;
+                border-radius: 6px;
+                padding: 10px;
+                position: absolute;
+                z-index: 1;
+                bottom: 150%; 
+                left: 50%;
+                transform: translateX(-50%);
+                border: 1px solid #555;
+                opacity: 0;
+                transition: opacity 0.3s;
+                font-family: sans-serif;
+                font-size: 13px;
+                line-height: 1.4;
+            }
+            .tooltip::after {
+                content: "";
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: #555 transparent transparent transparent;
+            }
+            .hotspot:hover .tooltip {
+                visibility: visible;
+                opacity: 1;
+            }
+            .title { color: #ff6666; font-weight: bold; margin-bottom: 5px; display: block; font-size: 15px; }
+        </style>
+    </head>
+    <body>
+        <div class="image-container">
+            <!-- 투명 배경의 2D AK-47 이미지 -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/65/AK-47_type_II_noBG.png" alt="AK-47">
+            
+            <!-- 부품 마커 1: 노리쇠 뭉치 -->
+            <div class="hotspot" style="top: 36%; left: 45%;">
+                <span class="tooltip">
+                    <span class="title">노리쇠 뭉치 (Bolt Carrier)</span>
+                    가스 압력을 받아 후퇴하며 탄피를 배출하고 다음 탄을 장전하는 핵심 구동부입니다.
+                </span>
+            </div>
+
+            <!-- 부품 마커 2: 탄창 -->
+            <div class="hotspot" style="top: 75%; left: 42%;">
+                <span class="tooltip">
+                    <span class="title">탄창 (Magazine)</span>
+                    7.62x39mm 탄약 30발이 들어가는 바나나형 탄창입니다. 특유의 곡선이 특징입니다.
+                </span>
+            </div>
+
+            <!-- 부품 마커 3: 가스관 -->
+            <div class="hotspot" style="top: 32%; left: 63%;">
+                <span class="tooltip">
+                    <span class="title">가스관 (Gas Tube)</span>
+                    발사 시 발생하는 가스의 일부를 뒤로 보내 노리쇠 뭉치를 밀어내는 역할을 합니다.
+                </span>
+            </div>
+
+            <!-- 부품 마커 4: 방아쇠 -->
+            <div class="hotspot" style="top: 55%; left: 33%;">
+                <span class="tooltip">
+                    <span class="title">방아쇠 (Trigger)</span>
+                    격발을 위한 장치입니다.
+                </span>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # HTML 컴포넌트 렌더링
+    components.html(html_code, height=700)
 
 # ==========================================
 # 2. 상세 설명 화면
 # ==========================================
 elif st.session_state.page == "info":
     st.title("AK-47, AKM, AK-74의 역사와 차이점")
-    st.button("⬅ 3D 뷰어로 돌아가기", on_click=change_page, args=("main",))
+    st.button("⬅ 인터랙티브 뷰어로 돌아가기", on_click=change_page, args=("main",))
 
     st.markdown("---")
     st.subheader("🛠️ 제조사 및 기원")
     st.write("""
-    * **제조사:** 칼라시니코프 콘체른 (Kalashnikov Concern, 구 이젭스크 기계공장)
+    * **제조사:** 칼라시니코프 콘체른 (Kalashnikov Concern)
     * **설계자:** 미하일 칼라시니코프 (Mikhail Kalashnikov)
-    * **특징:** 극한의 오염 환경(모래, 진흙, 수중)에서도 정합성이 유지되는 독보적인 신뢰성.
+    * **특징:** 극한의 오염 환경에서도 정합성이 유지되는 독보적인 신뢰성.
     """)
 
     col1, col2, col3 = st.columns(3)
@@ -123,7 +180,7 @@ elif st.session_state.page == "info":
         st.write("""
         * **채택:** 1949년
         * **탄약:** 7.62x39mm
-        * **특징:** 쇳덩어리를 깎아 만든 **절삭가공(Milled)** 방식. 매우 튼튼하지만 무게가 무겁고 대량 생산 단가가 높음.
+        * **특징:** 쇳덩어리를 깎아 만든 **절삭가공(Milled)** 방식. 매우 튼튼하지만 무겁고 생산 단가가 높음.
         """)
 
     with col2:
@@ -131,7 +188,7 @@ elif st.session_state.page == "info":
         st.write("""
         * **채택:** 1959년
         * **탄약:** 7.62x39mm
-        * **특징:** 철판을 찍어내는 **프레스 가공(Stamped)** 도입으로 경량화 및 대량생산 성공. 총구의 경사형 소염기가 외형적 특징.
+        * **특징:** 철판을 찍어내는 **프레스 가공(Stamped)** 도입으로 경량화 성공. 강한 타격감과 반동이 특징.
         """)
 
     with col3:
@@ -139,5 +196,5 @@ elif st.session_state.page == "info":
         st.write("""
         * **채택:** 1974년
         * **탄약:** 5.45x39mm (소구경 고속탄)
-        * **특징:** 미군 M16(5.56mm)에 대응하여 개발. 탄약 소형화로 반동이 대폭 감소하여 연발 사격 명중률 향상. 대형 원통형 소염기 탑재.
+        * **특징:** 탄약 소형화로 반동이 감소하여 명중률 향상. 대형 원통형 소염기 탑재.
         """)
