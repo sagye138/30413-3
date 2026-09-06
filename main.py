@@ -1,51 +1,63 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.title("3D 총기 부품 인터랙티브 뷰어")
+# 1. 전체 페이지 설정 (다크모드 친화적 레이아웃)
+st.set_page_config(page_title="AK 시리즈 3D 뷰어", layout="wide")
 
-# 1. 3D 모델 파일 경로 (로컬 파일 또는 웹 URL)
-# 실제 적용 시 로컬의 "ak47_model.glb" 파일을 웹 서버로 서빙하거나 base64로 변환하여 넣습니다.
-model_url = "https://modelviewer.dev/shared-assets/models/Astronaut.glb" # 예시용 3D 모델
+# 2. CSS를 활용한 전체 다크모드 강제 적용
+st.markdown("""
+    <style>
+        /* 전체 배경 및 텍스트 색상 */
+        .stApp {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        /* 버튼 스타일링 (다크 테마) */
+        div.stButton > button {
+            background-color: #2b2b2b;
+            color: #ffffff;
+            border: 1px solid #4a4a4a;
+            transition: all 0.2s ease-in-out;
+        }
+        div.stButton > button:hover {
+            background-color: #3b3b3b;
+            border: 1px solid #ffffff;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-# 2. HTML/JS를 이용한 구글 model-viewer 및 핫스팟 임베딩
-html_code = f"""
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+# 3. 세션 상태(Session State) 초기화 - 화면 전환용
+if 'page' not in st.session_state:
+    st.session_state.page = 'main'
 
-<model-viewer 
-    src="{model_url}" 
-    alt="3D 무기 모델" 
-    auto-rotate 
-    camera-controls 
-    style="width: 100%; height: 600px; background-color: #2c2c2c;">
+def change_page(page_name):
+    st.session_state.page = page_name
+
+# ==========================================
+# 메인 화면: 3D 모델 뷰어
+# ==========================================
+if st.session_state.page == 'main':
+    st.title("AK 소총 3D 모델 뷰어")
     
-    <!-- 부품 1: 핫스팟 마커 배치 (data-position에 3D 좌표 입력) -->
-    <button class="Hotspot" slot="hotspot-1" data-position="0.1 0.5 0.2" data-normal="0 0 1">
-        <div class="annotation">노리쇠 뭉치<br><span style="font-size:10px; font-weight:normal;">가스 압력으로 후퇴하는 구동부</span></div>
-    </button>
+    # 정보 화면으로 넘어가는 버튼
+    st.button("AK 시리즈 상세 설명 및 차이점 보기 ➔", on_click=change_page, args=('info',))
     
-    <!-- 부품 2: 핫스팟 마커 배치 -->
-    <button class="Hotspot" slot="hotspot-2" data-position="-0.2 0.1 0" data-normal="0 0 1">
-        <div class="annotation">방아쇠<br><span style="font-size:10px; font-weight:normal;">격발 장치</span></div>
-    </button>
-</model-viewer>
-
-<style>
-  .Hotspot {{
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    padding: 6px;
-    border: 1px solid #333;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-  }}
-  .annotation {{
-    font-size: 13px;
-    font-family: sans-serif;
-    font-weight: bold;
-    color: #111;
-  }}
-</style>
-"""
-
-# 3. 스트림릿에 HTML 컴포넌트 렌더링
-components.html(html_code, height=650)
+    # 3D 모델 URL (실제 프로젝트 시 로컬에 ak.glb 파일을 넣고 해당 경로로 변경 필요)
+    # 예시 URL로 대체되어 있습니다.
+    model_url = "https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb" 
+    
+    # HTML 및 Google model-viewer 코드
+    html_code = f"""
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+    <model-viewer 
+        src="{model_url}" 
+        alt="AK 3D Model" 
+        auto-rotate 
+        camera-controls 
+        environment-image="neutral"
+        exposure="1"
+        style="width: 100%; height: 600px; background-color: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
+        
+        <button class="Hotspot" slot="hotspot-1" data-position="0 0.2 0.3" data-normal="0 0 1">
+            <div class="annotation">노리쇠 뭉치</div>
+        </
