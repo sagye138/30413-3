@@ -46,8 +46,7 @@ if st.session_state.page == 'main':
     # 예시 URL로 대체되어 있습니다.
     model_url = "https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb" 
     
-    # HTML 및 Google model-viewer 코드
-    html_code = # HTML 및 Google model-viewer 코드 (일반 문자열 접합 방식으로 변경)
+    # HTML 및 Google model-viewer 코드 (일반 문자열 접합 방식으로 변경)
     html_code = (
         """
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
