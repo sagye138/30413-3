@@ -47,10 +47,14 @@ if st.session_state.page == 'main':
     model_url = "https://modelviewer.dev/shared-assets/models/glTF-Sample-Models/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb" 
     
     # HTML 및 Google model-viewer 코드
-    html_code = f"""
+    html_code = # HTML 및 Google model-viewer 코드 (일반 문자열 접합 방식으로 변경)
+    html_code = (
+        """
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
     <model-viewer 
-        src="{model_url}" 
+        src="""
+        + model_url
+        + """ 
         alt="AK 3D Model" 
         auto-rotate 
         camera-controls 
@@ -58,6 +62,27 @@ if st.session_state.page == 'main':
         exposure="1"
         style="width: 100%; height: 600px; background-color: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
         
+        <!-- 예시 핫스팟 (부품 위치) -->
         <button class="Hotspot" slot="hotspot-1" data-position="0 0.2 0.3" data-normal="0 0 1">
             <div class="annotation">노리쇠 뭉치</div>
-        </
+        </button>
+    </model-viewer>
+
+    <style>
+      .Hotspot {
+        background: rgba(30, 30, 30, 0.85);
+        border-radius: 4px;
+        padding: 6px;
+        border: 1px solid #666;
+        cursor: pointer;
+        color: #eee;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      }
+      .annotation {
+        font-size: 13px;
+        font-family: sans-serif;
+        font-weight: bold;
+      }
+    </style>
+    """
+    )
